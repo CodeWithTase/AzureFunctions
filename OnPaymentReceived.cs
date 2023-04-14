@@ -15,6 +15,7 @@ namespace pluralsightfuncs
         [FunctionName("OnPaymentReceived")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req,
+            [Queue("orders")] IAsyncCollector<Order> orderQueue,
             ILogger log)
         {
             log.LogInformation("Received a payment.");
@@ -23,6 +24,8 @@ namespace pluralsightfuncs
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             var order = JsonConvert.DeserializeObject<Order>(requestBody);
+
+            await orderQueue.AddAsync(order);
 
             log.LogInformation($"Order {order.OrderId} receieved from {order.Email} for product {order.ProductId}");
 
